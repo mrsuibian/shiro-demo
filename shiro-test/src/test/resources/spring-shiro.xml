@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:util="http://www.springframework.org/schema/util"
+	xsi:schemaLocation="
+        http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd">
+    
+    <!-- 安全管理器 -->
+	<bean id="securityManager" class="org.apache.shiro.web.mgt.DefaultWebSecurityManager">
+		<property name="realm" ref = "myRealm"></property>
+		<!-- <property name="sessionManager" ref = "sessionManager"></property>
+		<property name="cacheManager" ref = "cacheManager"></property> -->
+	</bean>
+	
+	<bean id="myRealm" class="com.qlexample.Realm.MyRealm" >
+	    <property name="credentialsMatcher" ref = "credentialsMatcher"></property>
+	    <property name="cachingEnabled" value = "false"></property>
+	</bean>
+	
+	<!-- <bean id = "sessionManager" class = "org.apache.shiro.web.session.mgt.DefaultWebSessionManager">
+	   <property name="globalSessionTimeout" value = "1800000"></property>
+	   <property name="deleteInvalidSessions" value = "true"></property>
+	   <property name="sessionValidationSchedulerEnabled" value = "true"></property>
+	   <property name="sessionValidationScheduler" ref = "sessionValidationScheduler"></property>
+	   <property name="sessionDao" ref = "sessionDao"></property>
+	   <property name="sessionIdCookieEnabled" value = "true"></property>
+	   <property name="sessionIdCookie" ref = "sessionIdCookie"></property>
+	</bean> -->
+	
+	<!-- <bean id = "sessionValidationScheduler" class = "org.apache.shiro.session.mgt.quartz.QuartzSessionValidationScheduler">
+	    <property name="sessionValidationInterval" value = "1800000"></property>
+	    <property name="sessionManager" ref = "sessionManager"></property>
+	</bean>
+	
+    <bean id="sessionDAO" class="org.apache.shiro.session.mgt.eis.EnterpriseCacheSessionDAO">
+        <property name="activeSessionsCacheName" value="shiro-activeSessionCache"/>
+        <property name="sessionIdGenerator" ref="sessionIdGenerator"/>
+    </bean>
+	
+	
+	<bean id = "sessionIdGenerator" class = "org.apache.shiro.session.mgt.eis.JavaUuidSessionIdGenerator"></bean> -->
+	
+	<bean id = "credentialsMatcher" class = "com.qlexample.credentials.RetryLimitHashedCredentialsMatcher">
+	     <property name="hashAlgorithmName" value = "md5"></property>
+	     <property name="hashIterations" value = "2"></property>
+	     <property name="storedCredentialsHexEncoded" value = "true"></property>
+	</bean>
+	
+	<!-- <bean id = "sessionIdCookie" class = "org.apache.shiro.web.servlet.SimpleCookie">
+	   <constructor-arg value = "sid"></constructor-arg>
+	   <property name="httpOnly" value = "true"></property>
+	   <property name="maxAge" value = "-1"></property>
+	</bean>
+	
+	
+	<bean id = "rememberMeCookie" class = "org.apache.shiro.web.servlet.SimpleCookie">
+	     <constructor-arg value = "rememberMe"></constructor-arg>
+	     <property name="httpOnly" value = "true"></property>
+	     <property name="maxAge" value = "2592000"></property>
+	</bean> -->
+	
+    <!-- <bean id="cacheManager" class="com.qlexample.utils.SpringCacheManagerWrapper">
+        <property name="cacheManager" ref="springCacheManager"/>
+    </bean> -->
+	
+	<!-- 基于Form表单的身份验证过滤器 -->
+    <bean id="formAuthenticationFilter" class="org.apache.shiro.web.filter.authc.FormAuthenticationFilter">
+        <property name="usernameParam" value="username"/>
+        <property name="passwordParam" value="password"/>
+        <property name="rememberMeParam" value="rememberMe"/>
+        <property name="loginUrl" value="/login"/>
+    </bean>
+	
+	<bean id = "sysUserFilter" class = "com.qlexample.web.shiro.filter.SysUserFilter"></bean>
+	
+	<bean id="shiroFilter" class="org.apache.shiro.spring.web.ShiroFilterFactoryBean">
+		<property name="securityManager" ref="securityManager" />
+		<property name="loginUrl" value="/login" />
+		<property name="successUrl" value = "/index"></property>
+		<property name="filters">
+		    <util:map>
+		        <entry key="authc" value-ref="formAuthenticationFilter"/>
+		        <entry key="sysUser" value-ref="sysUserFilter"/>
+		    </util:map>
+		</property>
+		<!-- /** = user,sysUser -->
+		<property name="filterChainDefinitions">
+			<value>
+			    /login = authc
+			    /logout = logout
+			    /authenticated = authc
+			    /index = anon
+			    /static/** = anon
+				/** = user,sysUser
+			</value>
+		</property>
+	</bean>
+</beans>

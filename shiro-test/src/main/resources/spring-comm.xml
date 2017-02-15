@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:context="http://www.springframework.org/schema/context"
+    xmlns:jdbc="http://www.springframework.org/schema/jdbc"    
+    xmlns:jee="http://www.springframework.org/schema/jee"   
+    xmlns:tx="http://www.springframework.org/schema/tx"
+    xmlns:jpa="http://www.springframework.org/schema/data/jpa"  
+    xsi:schemaLocation="
+        http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+        http://www.springframework.org/schema/data/jpa http://www.springframework.org/schema/data/jpa/spring-jpa.xsd
+        http://www.springframework.org/schema/jdbc http://www.springframework.org/schema/jdbc/spring-jdbc-3.2.xsd  
+        http://www.springframework.org/schema/jee http://www.springframework.org/schema/jee/spring-jee-3.2.xsd  
+        http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx.xsd">
+    <context:component-scan base-package="com.qlexample">
+        <context:exclude-filter type="annotation" expression="org.springframework.stereotype.Controller"/>
+    </context:component-scan>
+    
+    <context:property-placeholder ignore-resource-not-found="true" 
+         location = "classpath*:jdbc.properties"/>
+    
+    <bean name="dataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource"
+		destroy-method="close">
+		<property name="driverClass" value="${jdbc.driver}"></property>
+		<property name="jdbcUrl" value="${jdbc.url}"></property>
+		<property name="user" value="${jdbc.username}"></property>
+		<property name="password" value="${jdbc.password}"></property>
+		<property name="maxPoolSize" value="${jdbc.pool.maxActive}"></property>
+		<property name="minPoolSize" value="${jdbc.pool.maxIdle}"></property>
+		<!-- 初始化时获取的连接数，取值应在minPoolSize与maxPoolSize之间。Default: 3 -->
+		<property name="initialPoolSize" value="20" />
+		<!-- 设置是否自动提交 -->
+		<property name="autoCommitOnClose" value="false" />
+		<!-- 当连接池中的连接耗尽的时候c3p0一次同时获取的连接数。Default: 3 -->
+		<property name="acquireIncrement" value="5" />
+		<!-- 连接Idle10分钟后超时，每1分钟检查一次 -->
+		<property name="idleConnectionTestPeriod" value="60" />
+	</bean>
+
+	<bean id="entityManagerFactory"
+		class="org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean">
+		<property name="dataSource" ref="dataSource"></property>
+		<property name="jpaVendorAdapter" ref="hibernateJpaVendorAdapter"></property>
+		<property name="packagesToScan" value="com.qlexample.entity"></property>
+		<property name="jpaProperties">
+			<props>
+				<prop key="spring.jpa.hibernate.naming_strategy">org.hibernate.cfg.EJB3NamingStrategy</prop>
+			</props>
+		</property>
+	</bean>
+    
+    <bean id = "hibernateJpaVendorAdapter" class = "org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter">
+         <property name="databasePlatform" value = "org.hibernate.dialect.MySQLDialect"></property>
+    </bean>
+    
+    <bean id = "transactionManager" class = "org.springframework.orm.jpa.JpaTransactionManager">
+         <property name="entityManagerFactory" ref = "entityManagerFactory"></property>
+    </bean>
+
+
+    <tx:annotation-driven transaction-manager="transactionManager" proxy-target-class="true"/>
+    <jpa:repositories base-package="com.qlexample.repository" transaction-manager-ref="transactionManager" entity-manager-factory-ref="entityManagerFactory"></jpa:repositories>
+
+</beans>
